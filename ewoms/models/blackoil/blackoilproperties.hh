@@ -46,6 +46,8 @@ NEW_PROP_TAG(EnableSolvent);
 NEW_PROP_TAG(EnablePolymer);
 //! Enable surface volume scaling
 NEW_PROP_TAG(BlackoilConserveSurfaceVolume);
+//! Solve only for pressure, instead of fully implicit solution.
+NEW_PROP_TAG(SolvePressureOnly);
 }} // namespace Properties, Ewoms
 
 #endif
