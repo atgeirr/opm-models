@@ -348,11 +348,15 @@ public:
      */
     Scalar timeStepSize() const
     {
+        return timeStepSize_;
+
+        /* This should be handeled by ghe time stepper
         Scalar maximumTimeStepSize =
             std::min(episodeMaxTimeStepSize(),
                      std::max( Scalar(0), endTime() - this->time()));
 
         return std::min(timeStepSize_, maximumTimeStepSize);
+        */
     }
 
     /*!
@@ -833,6 +837,7 @@ public:
             << episodeLength_ << " "
             << startTime_ << " "
             << time_ << " "
+            << timeStepSize_ << " "
             << timeStepIdx_ << " ";
         restarter.serializeSectionEnd();
     }
@@ -854,6 +859,7 @@ public:
             >> episodeLength_
             >> startTime_
             >> time_
+            >> timeStepSize_
             >> timeStepIdx_;
         restarter.deserializeSectionEnd();
     }
