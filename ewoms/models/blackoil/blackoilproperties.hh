@@ -70,6 +70,9 @@ NEW_PROP_TAG(EnableEnergy);
 NEW_PROP_TAG(BlackOilEnergyScalingFactor);
 
 
+//! Enable the sequential solver approach
+NEW_PROP_TAG(EnableSequential);
+
 END_PROPERTIES
 
 #endif

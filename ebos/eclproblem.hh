@@ -289,6 +289,7 @@ SET_BOOL_PROP(EclBaseProblem, EnableTemperature, true);
 SET_BOOL_PROP(EclBaseProblem, EnablePolymer, false);
 SET_BOOL_PROP(EclBaseProblem, EnableSolvent, false);
 SET_BOOL_PROP(EclBaseProblem, EnableEnergy, false);
+SET_BOOL_PROP(EclBaseProblem, EnableSequential, false);
 
 // disable thermal flux boundaries by default
 SET_BOOL_PROP(EclBaseProblem, EnableThermalFluxBoundaries, false);
@@ -327,6 +328,7 @@ class EclProblem : public GET_PROP_TYPE(TypeTag, BaseProblem)
     enum { enableTemperature = GET_PROP_VALUE(TypeTag, EnableTemperature) };
     enum { enableEnergy = GET_PROP_VALUE(TypeTag, EnableEnergy) };
     enum { enableThermalFluxBoundaries = GET_PROP_VALUE(TypeTag, EnableThermalFluxBoundaries) };
+    enum { enableSequential = GET_PROP_VALUE(TypeTag, EnableSequential) };
     enum { gasPhaseIdx = FluidSystem::gasPhaseIdx };
     enum { oilPhaseIdx = FluidSystem::oilPhaseIdx };
     enum { waterPhaseIdx = FluidSystem::waterPhaseIdx };

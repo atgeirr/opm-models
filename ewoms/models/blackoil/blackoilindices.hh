@@ -35,7 +35,7 @@ namespace Ewoms {
  *
  * \brief The primary variable and equation indices for the black-oil model.
  */
-template <bool enableSolventV, bool enablePolymerV, bool enableEnergyV, unsigned PVOffset>
+template <bool enableSolventV, bool enablePolymerV, bool enableEnergyV, bool enableSequentialV, unsigned PVOffset>
 struct BlackOilIndices
 {
     //! Number of phases active at all times
@@ -54,6 +54,9 @@ struct BlackOilIndices
 
     //! Shall energy be conserved?
     static const bool enableEnergy = enableEnergyV;
+
+    //! Use sequential solver?
+    static const bool enableSequential = enableSequentialV;
 
 private:
     //! Number of solvent components to be considered
@@ -81,10 +84,12 @@ public:
     ////////
 
     //! The index of the water saturation
-    static const int waterSaturationIdx = PVOffset + 0;
+    static const int waterSaturationIdx =
+        enableSequential ? -1000 : PVOffset + 0;
 
     //! Index of the oil pressure in a vector of primary variables
-    static const int pressureSwitchIdx = PVOffset + 1;
+    static const int pressureSwitchIdx =
+        enableSequential ? PVOffset + 0 : PVOffset + 1;
 
     /*!
      * \brief Index of the switching variable which determines the composition of the
@@ -94,7 +99,8 @@ public:
      * saturation of the gas phase, as the mole fraction of the gas component in the oil
      * phase or as the mole fraction of the oil component in the gas phase.
      */
-    static const int compositionSwitchIdx = PVOffset + 2;
+    static const int compositionSwitchIdx =
+        enableSequential ? -1000 : PVOffset + 2;
 
     //! Index of the primary variable for the first solvent
     static const int solventSaturationIdx =

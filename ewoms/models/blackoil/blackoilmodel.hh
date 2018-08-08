@@ -111,6 +111,7 @@ SET_TYPE_PROP(BlackOilModel, Indices,
               Ewoms::BlackOilIndices<GET_PROP_VALUE(TypeTag, EnableSolvent),
                                      GET_PROP_VALUE(TypeTag, EnablePolymer),
                                      GET_PROP_VALUE(TypeTag, EnableEnergy),
+                                     GET_PROP_VALUE(TypeTag, EnableSequential),
                                      /*PVOffset=*/0>);
 
 //! Set the fluid system to the black-oil fluid system by default
