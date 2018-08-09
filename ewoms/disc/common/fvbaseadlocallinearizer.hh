@@ -109,9 +109,10 @@ private:
     typedef typename GridView::template Codim<0>::Entity Element;
 
     enum { numEq = GET_PROP_VALUE(TypeTag, NumEq) };
+    enum { numPv = GET_PROP_VALUE(TypeTag, EnableSequential) ? 1 : numEq };
 
     typedef Dune::FieldVector<Scalar, numEq> ScalarVectorBlock;
-    typedef Dune::FieldMatrix<Scalar, numEq, numEq> ScalarMatrixBlock;
+    typedef Dune::FieldMatrix<Scalar, numEq, numPv> ScalarMatrixBlock;
 
     typedef Dune::BlockVector<ScalarVectorBlock> ScalarLocalBlockVector;
     typedef Dune::Matrix<ScalarMatrixBlock> ScalarLocalBlockMatrix;
@@ -288,7 +289,7 @@ protected:
         size_t numDof = elemCtx.numDof(/*timeIdx=*/0);
         for (unsigned dofIdx = 0; dofIdx < numDof; dofIdx++) {
             for (unsigned eqIdx = 0; eqIdx < numEq; eqIdx++) {
-                for (unsigned pvIdx = 0; pvIdx < numEq; pvIdx++) {
+                for (unsigned pvIdx = 0; pvIdx < numPv; pvIdx++) {
                     // A[dofIdx][focusDofIdx][eqIdx][pvIdx] is the partial derivative of
                     // the residual function 'eqIdx' for the degree of freedom 'dofIdx'
                     // with regard to the focus variable 'pvIdx' of the degree of freedom

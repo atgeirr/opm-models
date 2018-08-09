@@ -133,7 +133,8 @@ SET_PROP(FvBaseDiscretization, JacobianMatrix)
 private:
     typedef typename GET_PROP_TYPE(TypeTag, Scalar) Scalar;
     enum { numEq = GET_PROP_VALUE(TypeTag, NumEq) };
-    typedef typename Dune::FieldMatrix<Scalar, numEq, numEq> MatrixBlock;
+    enum { numPv = GET_PROP_VALUE(TypeTag, EnableSequential) ? 1 : numEq };
+    typedef typename Dune::FieldMatrix<Scalar, numEq, numPv> MatrixBlock;
 public:
     typedef typename Dune::BCRSMatrix<MatrixBlock> type;
 };

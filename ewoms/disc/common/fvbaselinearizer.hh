@@ -95,9 +95,10 @@ class FvBaseLinearizer
     typedef JacobianMatrix Matrix;
 
     enum { numEq = GET_PROP_VALUE(TypeTag, NumEq) };
+    enum { numPv = GET_PROP_VALUE(TypeTag, EnableSequential) ? 1 : numEq };
     enum { historySize = GET_PROP_VALUE(TypeTag, TimeDiscHistorySize) };
 
-    typedef Dune::FieldMatrix<Scalar, numEq, numEq> MatrixBlock;
+    typedef Dune::FieldMatrix<Scalar, numEq, numPv> MatrixBlock;
     typedef Dune::FieldVector<Scalar, numEq> VectorBlock;
 
     static const bool linearizeNonLocalElements = GET_PROP_VALUE(TypeTag, LinearizeNonLocalElements);

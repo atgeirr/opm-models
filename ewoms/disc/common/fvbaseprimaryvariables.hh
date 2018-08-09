@@ -89,7 +89,8 @@ public:
      */
     Evaluation makeEvaluation(unsigned varIdx, unsigned timeIdx) const
     {
-        if (timeIdx == 0)
+        const bool enableSequential = GET_PROP_VALUE(TypeTag, EnableSequential);
+        if (timeIdx == 0 && (!enableSequential || (varIdx == 0)))
             return Toolbox::createVariable((*this)[varIdx], varIdx);
         else
             return Toolbox::createConstant((*this)[varIdx]);
