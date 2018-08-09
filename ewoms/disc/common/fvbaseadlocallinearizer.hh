@@ -72,12 +72,13 @@ SET_TYPE_PROP(AutoDiffLocalLinearizer, LocalLinearizer,
 SET_PROP(AutoDiffLocalLinearizer, Evaluation)
 {
 private:
-    static const unsigned numEq = GET_PROP_VALUE(TypeTag, NumEq);
+    static const bool enableSequential = GET_PROP_VALUE(TypeTag, EnableSequential);
+    static const unsigned numDerivs = enableSequential ? 1 : GET_PROP_VALUE(TypeTag, NumEq);
 
     typedef typename GET_PROP_TYPE(TypeTag, Scalar) Scalar;
 
 public:
-    typedef Opm::DenseAd::Evaluation<Scalar, numEq> type;
+    typedef Opm::DenseAd::Evaluation<Scalar, numDerivs> type;
 };
 
 END_PROPERTIES
