@@ -63,6 +63,7 @@
 #include "eclnewtonmethod.hh"
 #include "ecltracermodel.hh"
 #include "vtkecltracermodule.hh"
+#include "blackoilelementcontext.hh"
 
 #include <ewoms/common/pffgridvector.hh>
 #include <ewoms/models/blackoil/blackoilmodel.hh>
@@ -335,6 +336,8 @@ SET_BOOL_PROP(EclBaseProblem, EnableEnergy, false);
 SET_BOOL_PROP(EclBaseProblem, EnableThermalFluxBoundaries, false);
 
 SET_BOOL_PROP(EclBaseProblem, EnableTracerModel, false);
+
+SET_TYPE_PROP(EclBaseProblem, ElementContext, BlackoilElementContext<TypeTag>);
 
 END_PROPERTIES
 
