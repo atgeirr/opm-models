@@ -169,10 +169,10 @@ public:
      *
      * This means the spatial domain plus all auxiliary equations.
      */
-    void linearize(unsigned focusTimeIdx = 0)
+    void linearize()
     {
-        linearizeDomain(focusTimeIdx);
-        linearizeAuxiliaryEquations(focusTimeIdx);
+        linearizeDomain();
+        linearizeAuxiliaryEquations();
     }
 
     /*!
@@ -185,7 +185,7 @@ public:
      * The current state of affairs (esp. the previous and the current solutions) is
      * represented by the model object.
      */
-    void linearizeDomain(unsigned focustimeIndex)
+    void linearizeDomain()
     {
         // we defer the initialization of the Jacobian matrix until here because the
         // auxiliary modules usually assume the problem, model and grid to be fully
@@ -195,7 +195,7 @@ public:
 
         int succeeded;
         try {
-            linearize_(focustimeIndex);
+            linearize_();
             succeeded = 1;
         }
 #if ! DUNE_VERSION_NEWER(DUNE_COMMON, 2,5)
@@ -236,7 +236,7 @@ public:
      * \brief Linearize the part of the non-linear system of equations that is associated
      *        with the spatial domain.
      */
-    void linearizeAuxiliaryEquations(unsigned focusTimeIdx = 0)
+    void linearizeAuxiliaryEquations()
     {
         // flush possible local caches into matrix structure
         jacobian_->commit();
@@ -246,7 +246,7 @@ public:
         for (unsigned auxModIdx = 0; auxModIdx < model.numAuxiliaryModules(); ++auxModIdx) {
             bool succeeded = true;
             try {
-                model.auxiliaryModule(auxModIdx)->linearize(*jacobian_, residual_);//, focusTimeIdx);
+                model.auxiliaryModule(auxModIdx)->linearize(*jacobian_, residual_);
             }
             catch (const std::exception& e) {
                 succeeded = false;
@@ -299,7 +299,7 @@ public:
     const std::map<unsigned, Constraints>& constraintsMap() const
     { return constraintsMap_; }
 
-private:
+protected:
     Simulator& simulator_()
     { return *simulatorPtr_; }
     const Simulator& simulator_() const
@@ -435,7 +435,7 @@ private:
     }
 
     // linearize the whole system
-    void linearize_(unsigned focustimeindex)
+    void linearize_()
     {
         resetSystem_();
 
@@ -482,7 +482,7 @@ private:
                     const Element& elem = *elemIt;
                     if (!linearizeNonLocalElements && elem.partitionType() != Dune::InteriorEntity)
                         continue;
-                    linearizeElement_(elem, focustimeindex);
+                    asImp_().linearizeElement_(elem);
                 }
             }
             // If an exception occurs in the parallel block, it won't escape the
@@ -512,7 +512,7 @@ private:
     }
 
     // linearize an element in the interior of the process' grid partition
-    void linearizeElement_(const Element& elem, unsigned focustimeindex)
+    void linearizeElement_(const Element& elem)
     {
         unsigned threadId = ThreadManager::threadId();
 
@@ -520,7 +520,6 @@ private:
         auto& localLinearizer = model_().localLinearizer(threadId);
 
         // the actual work of linearization is done by the local linearizer class
-        elementCtx->setFocusTimeIndex(focustimeindex);
         localLinearizer.linearize(*elementCtx, elem);
 
         // update the right hand side and the Jacobian matrix
@@ -602,8 +601,14 @@ private:
     // the right-hand side
     GlobalEqVector residual_;
 
-
     std::mutex globalMatrixMutex_;
+
+    typedef typename GET_PROP_TYPE(TypeTag, Linearizer) Implementation;
+    const Implementation& asImp_() const
+    { return *static_cast<const Implementation*>(this); }
+    Implementation& asImp_()
+    { return *static_cast<Implementation*>(this); }
+
 };
 
 } // namespace Ewoms

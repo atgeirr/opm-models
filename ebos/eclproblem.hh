@@ -64,6 +64,7 @@
 #include "ecltracermodel.hh"
 #include "vtkecltracermodule.hh"
 #include "blackoilelementcontext.hh"
+#include "ecllinearizer.hh"
 
 #include <ewoms/common/pffgridvector.hh>
 #include <ewoms/models/blackoil/blackoilmodel.hh>
@@ -338,6 +339,8 @@ SET_BOOL_PROP(EclBaseProblem, EnableThermalFluxBoundaries, false);
 SET_BOOL_PROP(EclBaseProblem, EnableTracerModel, false);
 
 SET_TYPE_PROP(EclBaseProblem, ElementContext, BlackoilElementContext<TypeTag>);
+
+SET_TYPE_PROP(EclBaseProblem, Linearizer, EclLinearizer<TypeTag>);
 
 END_PROPERTIES
 

@@ -382,7 +382,7 @@ public:
                 asImp_().preSolve_(currentSolution, linearizer.residual());
                 updateTimer_.stop();
 
-                asImp_().linearizeAuxiliaryEquations_(focusTimeIdx);
+                asImp_().linearizeAuxiliaryEquations_();
 
                 if (!asImp_().proceed_()) {
                     if (asImp_().verbose_() && isatty(fileno(stdout)))
@@ -650,9 +650,9 @@ protected:
         model().linearizer().linearizeDomain(focusTimeIdx);
     }
 
-    void linearizeAuxiliaryEquations_(int focusTimeIdx)
+    void linearizeAuxiliaryEquations_()
     {
-        model().linearizer().linearizeAuxiliaryEquations(focusTimeIdx);
+        model().linearizer().linearizeAuxiliaryEquations();
         model().linearizer().finalize();
     }
 
