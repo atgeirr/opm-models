@@ -61,7 +61,7 @@ public:
         Base::linearizeAuxiliaryEquations();
     }
 
-    void linearizeDomain(unsigned focusTimeIdx)
+    void linearizeDomain(unsigned focusTimeIdx = 0)
     {
         focusTimeIndex_ = focusTimeIdx;
         Base::linearizeDomain();

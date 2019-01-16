@@ -366,10 +366,9 @@ public:
                 }
 
                 //
-                int focusTimeIdx = 0;
                 // do the actual linearization
                 linearizeTimer_.start();
-                asImp_().linearizeDomain_(focusTimeIdx);
+                asImp_().linearizeDomain_();
                 linearizeTimer_.stop();
 
                 // notify the implementation of the successful linearization on order to
@@ -645,9 +644,9 @@ protected:
      * \brief Linearize the global non-linear system of equations associated with the
      *        spatial domain.
      */
-    void linearizeDomain_(int focusTimeIdx)
+    void linearizeDomain_()
     {
-        model().linearizer().linearizeDomain(focusTimeIdx);
+        model().linearizer().linearizeDomain();
     }
 
     void linearizeAuxiliaryEquations_()
