@@ -94,6 +94,8 @@ class Simulator
     using GridView = GetPropType<TypeTag, Properties::GridView>;
     using Model = GetPropType<TypeTag, Properties::Model>;
     using Problem = GetPropType<TypeTag, Properties::Problem>;
+    using CollCommType = Dune::CollectiveCommunication<Dune::MPIHelper::MPICommunicator>;
+
 
 public:
     // do not allow to copy simulators around
@@ -106,6 +108,136 @@ public:
         setupTimer_.start();
 
         const auto& comm = Dune::MPIHelper::getCollectiveCommunication();
+        verbose_ = verbose && comm.rank() == 0;
+
+        timeStepIdx_ = 0;
+        startTime_ = 0.0;
+        time_ = 0.0;
+        endTime_ = EWOMS_GET_PARAM(TypeTag, Scalar, EndTime);
+        timeStepSize_ = EWOMS_GET_PARAM(TypeTag, Scalar, InitialTimeStepSize);
+        assert(timeStepSize_ > 0);
+        const std::string& predetTimeStepFile =
+            EWOMS_GET_PARAM(TypeTag, std::string, PredeterminedTimeStepsFile);
+        if (!predetTimeStepFile.empty()) {
+            std::ifstream is(predetTimeStepFile);
+            while (!is.eof()) {
+                Scalar dt;
+                is >> dt;
+                forcedTimeSteps_.push_back(dt);
+            }
+        }
+
+        episodeIdx_ = 0;
+        episodeStartTime_ = 0;
+        episodeLength_ = std::numeric_limits<Scalar>::max();
+
+        finished_ = false;
+
+        if (verbose_)
+            std::cout << "Allocating the simulation vanguard\n" << std::flush;
+
+        int exceptionThrown = 0;
+        std::string what;
+        try
+        { vanguard_.reset(new Vanguard(*this)); }
+        catch (const std::exception& e) {
+            exceptionThrown = 1;
+            what = e.what();
+            if (comm.size() > 1) {
+                what += " (on rank " + std::to_string(comm.rank()) + ")";
+            }
+            if (verbose_)
+                std::cerr << "Rank " << comm.rank() << " threw an exception: " << e.what() << std::endl;
+        }
+
+        if (comm.max(exceptionThrown)) {
+            auto all_what = gatherStrings(what);
+            assert(!all_what.empty());
+            throw std::runtime_error("Allocating the simulation vanguard failed: " + all_what.front());
+        }
+
+        if (verbose_)
+            std::cout << "Distributing the vanguard's data\n" << std::flush;
+
+        try
+        { vanguard_->loadBalance(); }
+        catch (const std::exception& e) {
+            exceptionThrown = 1;
+            what = e.what();
+            if (comm.size() > 1) {
+                what += " (on rank " + std::to_string(comm.rank()) + ")";
+            }
+            if (verbose_)
+                std::cerr << "Rank " << comm.rank() << " threw an exception: " << e.what() << std::endl;
+        }
+
+        if (comm.max(exceptionThrown)) {
+            auto all_what = gatherStrings(what);
+            assert(!all_what.empty());
+            throw std::runtime_error("Could not distribute the vanguard data: " + all_what.front());
+        }
+
+        if (verbose_)
+            std::cout << "Allocating the model\n" << std::flush;
+        model_.reset(new Model(*this));
+
+        if (verbose_)
+            std::cout << "Allocating the problem\n" << std::flush;
+        problem_.reset(new Problem(*this));
+
+        if (verbose_)
+            std::cout << "Initializing the model\n" << std::flush;
+
+        try
+        { model_->finishInit(); }
+        catch (const std::exception& e) {
+            exceptionThrown = 1;
+            what = e.what();
+            if (comm.size() > 1) {
+                what += " (on rank " + std::to_string(comm.rank()) + ")";
+            }
+            if (verbose_)
+                std::cerr << "Rank " << comm.rank() << " threw an exception: " << e.what() << std::endl;
+        }
+
+        if (comm.max(exceptionThrown)) {
+            auto all_what = gatherStrings(what);
+            assert(!all_what.empty());
+            throw std::runtime_error("Could not initialize the model: " + all_what.front());
+        }
+
+        if (verbose_)
+            std::cout << "Initializing the problem\n" << std::flush;
+
+        try
+        { problem_->finishInit(); }
+        catch (const std::exception& e) {
+            exceptionThrown = 1;
+            what = e.what();
+            if (comm.size() > 1) {
+                what += " (on rank " + std::to_string(comm.rank()) + ")";
+            }
+            if (verbose_)
+                std::cerr << "Rank " << comm.rank() << " threw an exception: " << e.what() << std::endl;
+        }
+
+        if (comm.max(exceptionThrown)) {
+            auto all_what = gatherStrings(what);
+            assert(!all_what.empty());
+            throw std::runtime_error("Could not initialize the problem: " + all_what.front());
+        }
+
+        setupTimer_.stop();
+
+        if (verbose_)
+            std::cout << "Simulator successfully set up\n" << std::flush;
+    }
+    Simulator(CollCommType comm, bool verbose = true)
+    {
+        TimerGuard setupTimerGuard(setupTimer_);
+
+        setupTimer_.start();
+
         verbose_ = verbose && comm.rank() == 0;
 
         timeStepIdx_ = 0;
