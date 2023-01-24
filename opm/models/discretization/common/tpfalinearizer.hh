@@ -383,16 +383,40 @@ private:
         for (unsigned auxModIdx = 0; auxModIdx < numAuxMod; ++auxModIdx)
             model.auxiliaryModule(auxModIdx)->addNeighbors(sparsityPattern);
 
+        // Array for storing flux contributions to the residual must have size
+        // equal to the number of connections (counted in both directions).
+        fluxResidualContributions_.resize(neighborInfo_.dataSize());
+        VectorBlock* fcAddress = fluxResidualContributions_.data();
+
         // allocate raw matrix
         jacobian_.reset(new SparseMatrixAdapter(simulator_()));
         diagMatAddress_.resize(numCells);
         // create matrix structure based on sparsity pattern
         jacobian_->reserve(sparsityPattern);
-        for (unsigned globI = 0; globI < numCells; globI++) {
+        for (unsigned globI = 0; globI < numCells; ++globI) {
             const auto& nbInfos = neighborInfo_[globI];
             diagMatAddress_[globI] = jacobian_->blockAddress(globI, globI);
             for (auto& nbInfo : nbInfos) {
                 nbInfo.matBlockAddress = jacobian_->blockAddress(nbInfo.neighbor, globI);
+                nbInfo.matBlockAddressTransposeElement = jacobian_->blockAddress(globI, nbInfo.neighbor);
+                nbInfo.fluxResidualContribAddress = fcAddress++;
+            }
+        }
+        assert(fcAddress == fluxResidualContributions_.data() + fluxResidualContributions_.size());
+
+        // Set the transpose locations for flux residual contribs.
+        for (unsigned globI = 0; globI < numCells; ++globI) {
+            const auto& nbInfos = neighborInfo_[globI];
+            for (auto& nbInfo : nbInfos) {
+                const unsigned globJ = nbInfo.neighbor;
+                auto nbJ = neighborInfo_[globJ];
+                const int locIdx = std::find_if(nbJ.begin(), nbJ.end(),
+                                                [globI](const auto& ninfo) { return ninfo.neighbor == globI; }) - nbJ.begin();
+                if (locIdx >= nbJ.size()) {
+                    throw std::logic_error("Failed to find neighbors: " + std::to_string(globI) + "  " + std::to_string(globJ));
+                }
+                VectorBlock* transposeContrib = nbJ[locIdx].fluxResidualContribAddress;
+                nbInfo.fluxResidualContribAddressTransposeElement = transposeContrib;
             }
         }
     }
@@ -431,8 +455,8 @@ private:
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-        for (unsigned globI = 0; globI < numCells; globI++) {
-            const auto& nbInfos = neighborInfo_[globI]; // this is a set but should maybe be changed
+        for (unsigned globI = 0; globI < numCells; ++globI) {
+            const auto& nbInfos = neighborInfo_[globI];
             VectorBlock res(0.0);
             MatrixBlock bMat(0.0);
             ADVectorBlock adres(0.0);
@@ -447,6 +471,10 @@ private:
             for (const auto& nbInfo : nbInfos) {
                 unsigned globJ = nbInfo.neighbor;
                 assert(globJ != globI);
+                if (globJ >= globI) {
+                    ++loc;
+                    continue;
+                }
                 res = 0.0;
                 bMat = 0.0;
                 adres = 0.0;
@@ -455,17 +483,25 @@ private:
                     throw std::logic_error("Missing updated intensive quantities for cell " + std::to_string(globJ) + " when assembling fluxes for cell " + std::to_string(globI));
                 }
                 const IntensiveQuantities& intQuantsEx = *intQuantsExP;
+                // Compute fluxes, derivatives w.r.t. globI.
                 LocalResidual::computeFlux(
-                       adres, problem_(), globI, globJ, intQuantsIn, intQuantsEx,
-                           nbInfo.trans, nbInfo.faceArea, nbInfo.faceDirection);
+                    adres, problem_(), globI, globJ, intQuantsIn, intQuantsEx,
+                    nbInfo.trans, nbInfo.faceArea, nbInfo.faceDirection);
                 adres *= nbInfo.faceArea;
                 setResAndJacobi(res, bMat, adres);
-                residual_[globI] += res;
-                //SparseAdapter syntax:  jacobian_->addToBlock(globI, globI, bMat);
-                *diagMatAddress_[globI] += bMat;
+                *nbInfo.fluxResidualContribAddress = res;
                 bMat *= -1.0;
-                //SparseAdapter syntax: jacobian_->addToBlock(globJ, globI, bMat);
                 *nbInfo.matBlockAddress += bMat;
+                // Compute fluxes, derivatives w.r.t. globJ.
+                adres = 0.0;
+                LocalResidual::computeFlux(
+                    adres, problem_(), globJ, globI, intQuantsEx, intQuantsIn,
+                    nbInfo.trans, nbInfo.faceArea, nbInfo.faceDirection);
+                adres *= nbInfo.faceArea;
+                setResAndJacobi(res, bMat, adres);
+                *nbInfo.fluxResidualContribAddressTransposeElement = res;
+                bMat *= -1.0;
+                *nbInfo.matBlockAddressTransposeElement += bMat;
                 ++loc;
             }
 
@@ -501,6 +537,23 @@ private:
                  *diagMatAddress_[globI] += bMat;
             }
         } // end of loop for cell globI.
+
+        // Since we have not accumulated the flux terms to the
+        // residual, nor its derivatives to the diagonal of the
+        // Jacobian, we do that now.  Doing it in the previous loop
+        // would create a race condition, as multiple threads might
+        // write to the same residual element, and the same Jacobian
+        // diagonal element.
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+        for (unsigned globI = 0; globI < numCells; ++globI) {
+            const auto& nbInfos = neighborInfo_[globI];
+            for (const auto& nbInfo : nbInfos) {
+                residual_[globI] += *nbInfo.fluxResidualContribAddress;
+                *diagMatAddress_[globI] -= *nbInfo.matBlockAddress;
+            }
+        }
 
         // Boundary terms. Only looping over cells with nontrivial bcs.
         for (const auto& bdyInfo : boundaryInfo_) {
@@ -560,9 +613,13 @@ private:
         double faceArea;
         FaceDir::DirEnum faceDirection;
         MatrixBlock* matBlockAddress;
+        MatrixBlock* matBlockAddressTransposeElement;
+        VectorBlock* fluxResidualContribAddress;
+        VectorBlock* fluxResidualContribAddressTransposeElement;
     };
     SparseTable<NeighborInfo> neighborInfo_;
     std::vector<MatrixBlock*> diagMatAddress_;
+    std::vector<VectorBlock> fluxResidualContributions_;
 
     using ScalarFluidState = typename IntensiveQuantities::ScalarFluidState;
     struct BoundaryConditionData
