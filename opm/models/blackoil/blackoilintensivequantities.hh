@@ -254,7 +254,8 @@ public:
 
         // now we compute all phase pressures
         std::array<Evaluation, numPhases> pC;
-        const auto& materialParams = problem.materialLawParams(globalSpaceIdx);
+        const auto& materialParams = problem.materialLawParams(elemCtx, dofIdx, timeIdx);
+        //const auto& materialParams = problem.materialLawParams(globalSpaceIdx);
         MaterialLaw::capillaryPressures(pC, materialParams, fluidState_);
         problem.updateRelperms(mobility_, dirMob_, fluidState_, globalSpaceIdx);
 
