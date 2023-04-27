@@ -308,12 +308,14 @@ protected:
             unsigned upstreamIdx = upstreamIndex_(phaseIdx);
             const auto& up = elemCtx.intensiveQuantities(upstreamIdx, timeIdx);
 
-            if (upstreamIdx == interiorDofIdx_)
+            if (upstreamIdx == interiorDofIdx_) {
                 volumeFlux_[phaseIdx] =
                     pressureDifference_[phaseIdx]*up.mobility(phaseIdx)*(-trans);
-            else
+                assert(isfinite(volumeFlux_[phaseIdx]));}
+            else {
                 volumeFlux_[phaseIdx] =
                     pressureDifference_[phaseIdx]*(Toolbox::value(up.mobility(phaseIdx))*(-trans));
+                assert(isfinite(volumeFlux_[phaseIdx]));}
         }
     }
 
@@ -391,6 +393,7 @@ protected:
 
                 volumeFlux_[phaseIdx] =
                     pressureDifference_[phaseIdx]*up.mobility(phaseIdx)*(-trans);
+                assert(isfinite(volumeFlux_[phaseIdx]));
 
             }
             else {
@@ -406,7 +409,7 @@ protected:
                 const auto& mob = kr[phaseIdx]/exFluidState.viscosity(phaseIdx);
                 volumeFlux_[phaseIdx] =
                     pressureDifference_[phaseIdx]*mob*(-trans);
-
+                assert(isfinite(volumeFlux_[phaseIdx]));
             }
         }
     }
@@ -452,6 +455,8 @@ private:
         const Scalar& K1 = K1mat[idx][idx];
         const Scalar T0 = K0 * ndotDistIn / distSquaredIn;
         const Scalar T1 = K1 * ndotDistExt / distSquaredExt;
+        assert(isfinite(T0 * T1 / (T0 + T1)));
+        assert(T0 * T1 / (T0 + T1) > 0.0);
         return T0 * T1 / (T0 + T1);
     }
     Scalar transmissibilityBoundary_(const ElementContext& elemCtx, unsigned scvfIdx, unsigned timeIdx) const

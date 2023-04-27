@@ -102,6 +102,7 @@ public:
                         unsigned timeIdx) const
     {
         // retrieve the intensive quantities for the SCV at the specified point in time
+
         const IntensiveQuantities& intQuants = elemCtx.intensiveQuantities(dofIdx, timeIdx);
         const auto& fs = intQuants.fluidState();
 
@@ -126,6 +127,11 @@ public:
                 * Toolbox::template decay<LhsEval>(intQuants.porosity());
 
             storage[conti0EqIdx + activeCompIdx] += surfaceVolume;
+            assert(isfinite(storage[conti0EqIdx + activeCompIdx]));
+            assert(isfinite(surfaceVolume));
+            assert(isfinite(intQuants.porosity()));
+           // assert(intQuants.porosity()<1000);
+           // assert(intQuants.porosity()>1e-20);
 
             // account for dissolved gas
             if (phaseIdx == oilPhaseIdx && FluidSystem::enableDissolvedGas()) {

@@ -256,6 +256,13 @@ public:
                         [[maybe_unused]] FluidState& fluidState,
                         [[maybe_unused]] unsigned globalSpaceIdx) const
     {}
+    template <class Context, class FluidState>
+    void updateRelperms( [[maybe_unused]] const Context& context,
+        [[maybe_unused]] std::array<Evaluation,numPhases> &mobility,
+        [[maybe_unused]] DirectionalMobilityPtr &dirMob,
+        [[maybe_unused]] FluidState &fluidState,
+        [[maybe_unused]] unsigned dofIdx, [[maybe_unused]] unsigned timeIdx) const
+    {}
 
     /*!
      * \brief Returns the temperature \f$\mathrm{[K]}\f$ within a control volume.

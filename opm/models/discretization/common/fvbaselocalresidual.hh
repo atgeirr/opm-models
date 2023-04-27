@@ -164,13 +164,34 @@ public:
 
         // evaluate the flux terms
         asImp_().evalFluxes(residual, elemCtx, /*timeIdx=*/0);
+              // in debug mode, ensure that the residual is well-defined
+        size_t numDof = elemCtx.numDof(/*timeIdx=*/0);
+        for (unsigned i=0; i < numDof; i++) {
+            for (unsigned j = 0; j < numEq; ++ j) {
+                assert(isfinite(residual[i][j]));
+                Valgrind::CheckDefined(residual[i][j]);
+            }
+        }
+        
 
         // evaluate the storage and the source terms
         asImp_().evalVolumeTerms_(residual, elemCtx);
-
+                // in debug mode, ensure that the residual is well-defined
+        for (unsigned i=0; i < numDof; i++) {
+            for (unsigned j = 0; j < numEq; ++ j) {
+                assert(isfinite(residual[i][j]));
+                Valgrind::CheckDefined(residual[i][j]);
+            }
+        }
         // evaluate the boundary conditions
         asImp_().evalBoundary_(residual, elemCtx, /*timeIdx=*/0);
-
+        // in debug mode, ensure that the residual is well-defined
+        for (unsigned i=0; i < numDof; i++) {
+            for (unsigned j = 0; j < numEq; ++ j) {
+                assert(isfinite(residual[i][j]));
+                Valgrind::CheckDefined(residual[i][j]);
+            }
+        }
         if (useVolumetricResidual) {
             // make the residual volume specific (i.e., make it incorrect mass per cubic
             // meter instead of total mass)

@@ -184,11 +184,12 @@ public:
         const auto& priVars = elemCtx.primaryVars(dofIdx, timeIdx);
         const auto& linearizationType = problem.model().linearizer().getLinearizationType();
         unsigned globalSpaceIdx = elemCtx.globalSpaceIndex(dofIdx, timeIdx);
+        const auto&entity = elemCtx.stencil(timeIdx).entity(dofIdx);
         Scalar RvMax = FluidSystem::enableVaporizedOil()
-            ? problem.maxOilVaporizationFactor(timeIdx, globalSpaceIdx)
+            ? problem.maxOilVaporizationFactor(timeIdx, elemCtx.simulator().problem().container_[entity].preAdaptIndex)
             : 0.0;
         Scalar RsMax = FluidSystem::enableDissolvedGas()
-            ? problem.maxGasDissolutionFactor(timeIdx, globalSpaceIdx)
+            ? problem.maxGasDissolutionFactor(timeIdx, elemCtx.simulator().problem().container_[entity].preAdaptIndex)
             : 0.0;
 
         asImp_().updateTemperature_(elemCtx, dofIdx, timeIdx);
@@ -257,7 +258,7 @@ public:
         const auto& materialParams = problem.materialLawParams(elemCtx, dofIdx, timeIdx);
         //const auto& materialParams = problem.materialLawParams(globalSpaceIdx);
         MaterialLaw::capillaryPressures(pC, materialParams, fluidState_);
-        problem.updateRelperms(mobility_, dirMob_, fluidState_, globalSpaceIdx);
+        problem.updateRelperms(elemCtx,mobility_, dirMob_, fluidState_, dofIdx, timeIdx);
 
         // scaling the capillary pressure due to salt precipitation 
         if (BrineModule::hasPcfactTables() && priVars.primaryVarsMeaningBrine() == PrimaryVariables::BrineMeaning::Sp) {
@@ -300,7 +301,7 @@ public:
         Evaluation SoMax = 0.0;
         if (FluidSystem::phaseIsActive(FluidSystem::oilPhaseIdx)) {
             SoMax = max(fluidState_.saturation(oilPhaseIdx),
-                        problem.maxOilSaturation(globalSpaceIdx));
+                        problem.maxOilSaturation(elemCtx.simulator().problem().container_[entity].preAdaptIndex));
         }
 
         // take the meaning of the switching primary variable into account for the gas
@@ -447,9 +448,9 @@ public:
 
         // the porosity must be modified by the compressibility of the
         // rock...
-        Scalar rockCompressibility = problem.rockCompressibility(globalSpaceIdx);
+        Scalar rockCompressibility = problem.rockCompressibility(elemCtx.simulator().problem().container_[entity].preAdaptIndex);
         if (rockCompressibility > 0.0) {
-            Scalar rockRefPressure = problem.rockReferencePressure(globalSpaceIdx);
+            Scalar rockRefPressure = problem.rockReferencePressure(elemCtx.simulator().problem().container_[entity].preAdaptIndex);
             Evaluation x;
             if (FluidSystem::phaseIsActive(oilPhaseIdx)) {
                 x = rockCompressibility*(fluidState_.pressure(oilPhaseIdx) - rockRefPressure);
@@ -462,7 +463,7 @@ public:
         }
 
         // deal with water induced rock compaction
-        porosity_ *= problem.template rockCompPoroMultiplier<Evaluation>(*this, globalSpaceIdx);
+        porosity_ *= problem.template rockCompPoroMultiplier<Evaluation>(*this, elemCtx.simulator().problem().container_[entity].preAdaptIndex);
 
         // the MICP processes change the porosity
         if constexpr (enableMICP){
@@ -477,7 +478,7 @@ public:
             porosity_ *= (1.0 - Sp);
         }
 
-        rockCompTransMultiplier_ = problem.template rockCompTransMultiplier<Evaluation>(*this, globalSpaceIdx);
+        rockCompTransMultiplier_ = problem.template rockCompTransMultiplier<Evaluation>(*this, elemCtx.simulator().problem().container_[entity].preAdaptIndex);
 
         asImp_().solventPvtUpdate_(elemCtx, dofIdx, timeIdx);
         asImp_().zPvtUpdate_();
