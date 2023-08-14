@@ -186,10 +186,10 @@ public:
         unsigned globalSpaceIdx = elemCtx.globalSpaceIndex(dofIdx, timeIdx);
         const auto&entity = elemCtx.stencil(timeIdx).entity(dofIdx);
         Scalar RvMax = FluidSystem::enableVaporizedOil()
-            ? problem.maxOilVaporizationFactor(timeIdx, elemCtx.simulator().problem().container_[entity].preAdaptIndex)
+            ? problem.maxOilVaporizationFactor(timeIdx, globalSpaceIdx)
             : 0.0;
         Scalar RsMax = FluidSystem::enableDissolvedGas()
-            ? problem.maxGasDissolutionFactor(timeIdx, elemCtx.simulator().problem().container_[entity].preAdaptIndex)
+            ? problem.maxGasDissolutionFactor(timeIdx, globalSpaceIdx)
             : 0.0;
 
         asImp_().updateTemperature_(elemCtx, dofIdx, timeIdx);
@@ -301,7 +301,7 @@ public:
         Evaluation SoMax = 0.0;
         if (FluidSystem::phaseIsActive(FluidSystem::oilPhaseIdx)) {
             SoMax = max(fluidState_.saturation(oilPhaseIdx),
-                        problem.maxOilSaturation(elemCtx.simulator().problem().container_[entity].preAdaptIndex));
+                        problem.maxOilSaturation(globalSpaceIdx));
         }
 
         // take the meaning of the switching primary variable into account for the gas
@@ -448,9 +448,9 @@ public:
 
         // the porosity must be modified by the compressibility of the
         // rock...
-        Scalar rockCompressibility = problem.rockCompressibility(elemCtx.simulator().problem().container_[entity].preAdaptIndex);
+        Scalar rockCompressibility = problem.rockCompressibility(globalSpaceIdx);
         if (rockCompressibility > 0.0) {
-            Scalar rockRefPressure = problem.rockReferencePressure(elemCtx.simulator().problem().container_[entity].preAdaptIndex);
+            Scalar rockRefPressure = problem.rockReferencePressure(globalSpaceIdx);
             Evaluation x;
             if (FluidSystem::phaseIsActive(oilPhaseIdx)) {
                 x = rockCompressibility*(fluidState_.pressure(oilPhaseIdx) - rockRefPressure);
@@ -463,7 +463,7 @@ public:
         }
 
         // deal with water induced rock compaction
-        porosity_ *= problem.template rockCompPoroMultiplier<Evaluation>(*this, elemCtx.simulator().problem().container_[entity].preAdaptIndex);
+        porosity_ *= problem.template rockCompPoroMultiplier<Evaluation>(*this, globalSpaceIdx);
 
         // the MICP processes change the porosity
         if constexpr (enableMICP){
@@ -478,7 +478,7 @@ public:
             porosity_ *= (1.0 - Sp);
         }
 
-        rockCompTransMultiplier_ = problem.template rockCompTransMultiplier<Evaluation>(*this, elemCtx.simulator().problem().container_[entity].preAdaptIndex);
+        rockCompTransMultiplier_ = problem.template rockCompTransMultiplier<Evaluation>(*this, globalSpaceIdx);
 
         asImp_().solventPvtUpdate_(elemCtx, dofIdx, timeIdx);
         asImp_().zPvtUpdate_();
