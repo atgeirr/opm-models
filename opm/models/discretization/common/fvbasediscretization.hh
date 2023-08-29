@@ -1803,8 +1803,8 @@ public:
         if (enableGridAdaptation_
             && !std::is_same<DiscreteFunction, BlockVectorWrapper>::value)
         {
-            throw std::invalid_argument("Problems which require auxiliary modules cannot be used in"
-                                      " conjunction with dune-fem");
+       //     throw std::invalid_argument("Problems which require auxiliary modules cannot be used in"
+        //                              " conjunction with dune-fem");
         }
 
         size_t numDof = numTotalDof();
@@ -2019,10 +2019,10 @@ public:
         : ParentType(simulator)
     {
         if (this->enableGridAdaptation_) {
-            throw std::invalid_argument("Grid adaptation need to use"
-                                        " BaseDiscretization = FvBaseDiscretizationFemAdapt"
-                                        " which currently requires the presence of the"
-                                        " dune-fem module");
+       //     throw std::invalid_argument("Grid adaptation need to use"
+    //                                    " BaseDiscretization = FvBaseDiscretizationFemAdapt"
+    //                                    " which currently requires the presence of the"
+    //                                    " dune-fem module");
         }
         size_t numDof = this->asImp_().numGridDof();
         for (unsigned timeIdx = 0; timeIdx < historySize; ++timeIdx) {

@@ -130,8 +130,8 @@ public:
             assert(isfinite(storage[conti0EqIdx + activeCompIdx]));
             assert(isfinite(surfaceVolume));
             assert(isfinite(intQuants.porosity()));
-           // assert(intQuants.porosity()<1000);
-           // assert(intQuants.porosity()>1e-20);
+            assert(intQuants.porosity()<1000);
+            assert(intQuants.porosity()>1e-20);
 
             // account for dissolved gas
             if (phaseIdx == oilPhaseIdx && FluidSystem::enableDissolvedGas()) {
