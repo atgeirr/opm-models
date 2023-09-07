@@ -130,7 +130,8 @@ public:
             assert(isfinite(storage[conti0EqIdx + activeCompIdx]));
             assert(isfinite(surfaceVolume));
             assert(isfinite(intQuants.porosity()));
-            assert(intQuants.porosity()<1000);
+            if (intQuants.porosity()>1000)
+                 throw std::logic_error("Error in Porosity()");
             assert(intQuants.porosity()>1e-20);
 
             // account for dissolved gas
