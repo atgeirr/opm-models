@@ -183,7 +183,7 @@ public:
         const auto& problem = elemCtx.problem();
         const auto& priVars = elemCtx.primaryVars(dofIdx, timeIdx);
         const auto& linearizationType = problem.model().linearizer().getLinearizationType();
-        //unsigned globalSpaceIdx = elemCtx.globalSpaceIndex(dofIdx, timeIdx);
+       // unsigned globalSpaceIdx = elemCtx.globalSpaceIndex(dofIdx, timeIdx);
         const auto&entity = elemCtx.stencil(timeIdx).entity(dofIdx);
         auto& globalSpaceIdx = problem.container_[entity].preAdaptIndex;       
         Scalar RvMax = FluidSystem::enableVaporizedOil()

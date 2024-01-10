@@ -31,7 +31,7 @@
 #include <opm/models/utils/parametersystem.hh>
 
 #include <dune/common/version.hh>
-
+#define DISABLE_ALUGRID_SFC_ORDERING 1
 #if HAVE_DUNE_FEM
 #include <dune/fem/space/common/dofmanager.hh>
 #endif

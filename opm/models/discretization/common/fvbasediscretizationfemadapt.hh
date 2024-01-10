@@ -27,7 +27,7 @@
  */
 #ifndef EWOMS_FV_BASE_DISCRETIZATION_FEMADAPT_HH
 #define EWOMS_FV_BASE_DISCRETIZATION_FEMADAPT_HH
-
+#define DISABLE_ALUGRID_SFC_ORDERING 1
 #include <opm/models/discretization/common/fvbasediscretization.hh>
 
 #include <dune/fem/space/common/adaptationmanager.hh>
