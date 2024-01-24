@@ -119,6 +119,7 @@ public:
     {
         // adapt the grid if enabled and if all dependencies are available
         // adaptation is only done if markForGridAdaptation returns true
+        std::cout << "Grid size before adaptation " << this->simulator_.vanguard().grid().size(0) << std::endl;
         if (this->enableGridAdaptation_) {
             // check if problem allows for adaptation and cells were marked
             if (this->simulator_.problem().markForGridAdaptation()) {
@@ -148,8 +149,48 @@ public:
                 for (; outIt != outEndIt; ++outIt)
                     (*outIt)->allocBuffers();
             }
+
         }
+        std::cout << "Grid size after adaptation " << this->simulator_.vanguard().grid().size(0) << std::endl;
     }
+
+
+    void adaptMarkedGrid()
+    {
+        // adapt the grid if enabled and if all dependencies are available
+        // adaptation is only done if markForGridAdaptation returns true
+        std::cout << "Grid size before adaptation " << this->simulator_.vanguard().grid().size(0) << std::endl;
+        // check if problem allows for adaptation and cells were marked
+        // adapt the grid and load balance if necessary
+        adaptationManager().adapt();
+
+        // if the grid has potentially changed, we need to re-create the
+        // supporting data structures.
+        this->elementMapper_.update(this->gridView_);
+        this->vertexMapper_.update(this->gridView_);
+        this->resetLinearizer();
+        // this is a bit hacky because it supposes that Problem::finishInit()
+        // works fine multiple times in a row.
+        //
+        // TODO: move this to Problem::gridChanged()
+        this->finishInit();
+
+        // notify the problem that the grid has changed
+        //
+        // TODO: come up with a mechanism to access the unadapted data structures
+        // outside of the problem (i.e., grid, mappers, solutions)
+        this->simulator_.problem().gridChanged();
+
+        // notify the modules for visualization output
+        auto outIt = this->outputModules_.begin();
+        auto outEndIt = this->outputModules_.end();
+        for (; outIt != outEndIt; ++outIt)
+                    (*outIt)->allocBuffers();
+
+
+        std::cout << "Grid size after adaptation " << this->simulator_.vanguard().grid().size(0) << std::endl;
+    }
+
 
     AdaptationManager& adaptationManager()
     {
